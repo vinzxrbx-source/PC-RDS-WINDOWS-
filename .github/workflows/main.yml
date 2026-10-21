@@ -17,19 +17,20 @@ jobs:
     timeout-minutes: 360
 
     steps:
-    - name: Instalar e Configurar Chrome Remote Desktop via Chocolatey
+    - name: Instalar e Configurar Chrome Remote Desktop
       run: |
-        Write-Host "A instalar o gestor Chocolatey..."
+        Write-Host "A instalar o gestor Chocolatey e o Google Chrome..."
         Set-ExecutionPolicy Bypass -Scope Process -Force
         [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
         iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
         $env:Path += ";$env:ALLUSERSPROFILE\chocolatey\bin"
+        choco install googlechrome -y
 
-        Write-Host "A instalar o Google Chrome e o Chrome Remote Desktop..."
-        choco install googlechrome chrome-remote-desktop -y
+        Write-Host "A instalar o Chrome Remote Desktop via Winget..."
+        winget install --id Google.ChromeRemoteDesktop -e --accept-source-agreements --accept-package-agreements --silent
 
         Write-Host "A procurar o executável de registo..."
-        Start-Sleep -Seconds 5
+        Start-Sleep -Seconds 10
         
         # Procura automática do executável por todo o diretório do Google
         $crdExe = Get-ChildItem -Path "C:\Program Files (x86)\Google\Chrome Remote Desktop", "C:\Program Files\Google\Chrome Remote Desktop" -Filter "remoting_start_host.exe" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
