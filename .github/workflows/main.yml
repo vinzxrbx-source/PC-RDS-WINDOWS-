@@ -9,21 +9,22 @@ jobs:
     timeout-minutes: 360
 
     steps:
-    - name: Configurar RDP e Credenciais
+    - name: Configurar RDP e Utilizador Seguro
       run: |
-        # Configurações de Registo RDP e Firewall
+        # 1. Configurações de Servidor RDP e Firewall
         Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
         Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 0
         Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
 
-        # Redefine a senha do utilizador nativo runneradmin
-        $Password = ConvertTo-SecureString "SenhaForte123!" -AsPlainText -Force
-        Set-LocalUser -Name "runneradmin" -Password $Password
-        
-        # Garante as permissões de acesso remoto ao runneradmin
-        net localgroup "Remote Desktop Users" runneradmin /add
+        # 2. Desativar política de restrição de palavra-passe em branco / RDP NLA
+        Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Lsa' -Name "LimitBlankPasswordUse" -Value 0
 
-        # Transfere e inicia o Bore
+        # 3. Criar utilizador dedicado 'rdpuser' com senha explicitamente definida
+        cmd /c "net user rdpuser SenhaForte123! /add /expires:never"
+        cmd /c "net localgroup Administrators rdpuser /add"
+        cmd /c "net localgroup \"Remote Desktop Users\" rdpuser /add"
+
+        # 4. Transfere e executa o Bore (Túnel TCP)
         Invoke-WebRequest -Uri "https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-pc-windows-msvc.zip" -OutFile "bore.zip"
         Expand-Archive -Path "bore.zip" -DestinationPath "."
 
