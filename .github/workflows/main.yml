@@ -18,8 +18,8 @@ jobs:
 
         Start-Process ssh -ArgumentList "-tt -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -p 443 -R 0:localhost:3389 tcp@a.pinggy.io" -RedirectStandardOutput "C:\pinggy.out" -RedirectStandardError "C:\pinggy.err" -NoNewWindow
 
-        Write-Host "A ligar o tunel, a aguardar 12 segundos..."
-        Start-Sleep -Seconds 12
+        Write-Host "A ligar o tunel, a aguardar 22 segundos para o Pinggy gerar o link..."
+        Start-Sleep -Seconds 22
 
         Write-Host "=== O SEU LINK DO PINGGY ESTA AQUI ABAIXO ==="
         if (Test-Path "C:\pinggy.out") { Get-Content "C:\pinggy.out" }
