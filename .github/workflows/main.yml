@@ -12,15 +12,18 @@ jobs:
     - name: Configurar RDP e Iniciar Bore
       run: |
         Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
-        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 1
+        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 0
         Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
-        net user runneradmin SenhaForte123!
+        
+        # Cria um novo utilizador administrador dedicado sem falhas
+        net user admin123 SenhaForte123! /add
+        net localgroup Administrators admin123 /add
+        net localgroup "Remote Desktop Users" admin123 /add
 
-        # Transferir o Bore (túnel TCP direto)
+        # Transfere e executa o Bore
         Invoke-WebRequest -Uri "https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-pc-windows-msvc.zip" -OutFile "bore.zip"
         Expand-Archive -Path "bore.zip" -DestinationPath "."
 
-        # Iniciar o Bore apontando para a porta 3389 no servidor bore.pub
         Start-Process .\bore.exe -ArgumentList "local 3389 --to bore.pub" -RedirectStandardOutput "C:\bore.log" -RedirectStandardError "C:\bore.err" -NoNewWindow
 
         Write-Host "A aguardar o link TCP do Bore..."
