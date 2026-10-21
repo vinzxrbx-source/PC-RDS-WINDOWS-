@@ -17,17 +17,16 @@ jobs:
     timeout-minutes: 360
 
     steps:
-    - name: Instalar e Configurar Chrome Remote Desktop
+    - name: Instalar e Configurar Chrome Remote Desktop via Chocolatey
       run: |
-        Write-Host "A descarregar o Google Chrome diretamente..."
-        $chromeInstaller = "$env:TEMP\chrome_installer.exe"
-        Invoke-WebRequest -Uri "https://dl.google.com/chrome/install/latest/chrome_installer.exe" -OutFile $chromeInstaller
-        
-        Write-Host "A instalar o Google Chrome silenciosamente..."
-        Start-Process -FilePath $chromeInstaller -ArgumentList "/silent /install" -Wait
+        Write-Host "A instalar o gestor Chocolatey..."
+        Set-ExecutionPolicy Bypass -Scope Process -Force
+        [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
+        iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+        $env:Path += ";$env:ALLUSERSPROFILE\chocolatey\bin"
 
-        Write-Host "A instalar o Chrome Remote Desktop via Winget..."
-        winget install --id Google.ChromeRemoteDesktop -e --source winget --accept-source-agreements --accept-package-agreements
+        Write-Host "A instalar o Google Chrome e o Chrome Remote Desktop..."
+        choco install googlechrome chrome-remote-desktop -y
 
         Write-Host "A registar o host com a tua conta Google..."
         & "${Env:PROGRAMFILES(X86)}\Google\Chrome Remote Desktop\CurrentVersion\remoting_start_host.exe" --code="${{ github.event.inputs.auth_code }}" --redirect-url="https://remotedesktop.google.com/_/oauthredirect" --name="$Env:COMPUTERNAME" --pin="${{ github.event.inputs.pin }}"
