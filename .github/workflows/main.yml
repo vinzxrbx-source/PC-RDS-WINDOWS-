@@ -18,20 +18,21 @@ jobs:
 
     - name: Iniciar Tunel Pinggy e Capturar Link
       run: |
-        # Redireciona stdout e stderr para o mesmo ficheiro log
-        Start-Process ssh -ArgumentList "-o StrictHostKeyChecking=no -o ServerAliveInterval=30 -p 443 -R 0:localhost:3389 tcp@a.pinggy.io" -RedirectStandardOutput "C:\pinggy.log" -RedirectStandardError "C:\pinggy.log" -NoNewWindow
+        Start-Process ssh -ArgumentList "-o StrictHostKeyChecking=no -o ServerAliveInterval=30 -p 443 -R 0:localhost:3389 tcp@a.pinggy.io" -RedirectStandardOutput "C:\pinggy.out" -RedirectStandardError "C:\pinggy.err" -NoNewWindow
         
         Write-Host "A aguardar a geracao do link do Pinggy..."
-        for ($i=0; $i -lt 20; $i++) {
+        for ($i=0; $i -lt 25; $i++) {
             Start-Sleep -Seconds 1
-            if (Test-Path "C:\pinggy.log") {
-                $content = Get-Content "C:\pinggy.log" -Raw -ErrorAction SilentlyContinue
-                if ($content -match "tcp://") {
-                    Write-Host "--- LINK ENCONTRADO ---"
-                    Write-Host $content
-                    exit 0
-                }
+            $allContent = ""
+            if (Test-Path "C:\pinggy.out") { $allContent += Get-Content "C:\pinggy.out" -Raw -ErrorAction SilentlyContinue }
+            if (Test-Path "C:\pinggy.err") { $allContent += Get-Content "C:\pinggy.err" -Raw -ErrorAction SilentlyContinue }
+            
+            if ($allContent -match "tcp://") {
+                Write-Host "--- LINK ENCONTRADO COM SUCESSO ---"
+                Write-Host $allContent
+                exit 0
             }
         }
-        # Se passar o tempo, imprime o que tiver lá
-        Get-Content "C:\pinggy.log" -ErrorAction SilentlyContinue
+        Write-Host "Conteudo capturado:"
+        if (Test-Path "C:\pinggy.out") { Get-Content "C:\pinggy.out" }
+        if (Test-Path "C:\pinggy.err") { Get-Content "C:\pinggy.err" }
