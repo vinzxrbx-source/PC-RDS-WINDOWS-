@@ -9,23 +9,12 @@ jobs:
     timeout-minutes: 360
 
     steps:
-    - name: Configurar RDP e Iniciar Tunel
+    - name: Activar RDP
       run: |
         Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
         Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 1
         Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
         net user runneradmin SenhaForte123!
 
-        # Baixar e executar o Loophole (Sem necessidade de Token/Conta)
-        Invoke-WebRequest -Uri "https://github.com/loophole/cli/releases/download/v1.0.0-beta.14/loophole_1.0.0-beta.14_windows_amd64.zip" -OutFile "loophole.zip"
-        Expand-Archive -Path "loophole.zip" -DestinationPath "."
-        
-        Start-Process .\loophole.exe -ArgumentList "tcp 3389" -RedirectStandardOutput "C:\loophole.log" -RedirectStandardError "C:\loophole.err" -NoNewWindow
-        
-        Write-Host "A aguardar geracao do link..."
-        Start-Sleep -Seconds 10
-        
-        if (Test-Path "C:\loophole.log") { Get-Content "C:\loophole.log" }
-        if (Test-Path "C:\loophole.err") { Get-Content "C:\loophole.err" }
-        
-        while ($true) { Start-Sleep -Seconds 30 }
+    - name: Iniciar Tunel RDP
+      uses: alx-s/rdp-action@v1
