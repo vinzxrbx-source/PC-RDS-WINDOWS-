@@ -18,15 +18,20 @@ jobs:
 
     - name: Iniciar Tunel Pinggy e Capturar Link
       run: |
-        Start-Process ssh -ArgumentList "-o StrictHostKeyChecking=no -o ServerAliveInterval=30 -p 443 -R 0:localhost:3389 tcp@a.pinggy.io" -RedirectStandardOutput "C:\pinggy.txt" -RedirectStandardError "C:\pinggy.err" -NoNewWindow
+        # Redireciona stdout e stderr para o mesmo ficheiro log
+        Start-Process ssh -ArgumentList "-o StrictHostKeyChecking=no -o ServerAliveInterval=30 -p 443 -R 0:localhost:3389 tcp@a.pinggy.io" -RedirectStandardOutput "C:\pinggy.log" -RedirectStandardError "C:\pinggy.log" -NoNewWindow
         
         Write-Host "A aguardar a geracao do link do Pinggy..."
-        for ($i=0; $i -lt 15; $i++) {
+        for ($i=0; $i -lt 20; $i++) {
             Start-Sleep -Seconds 1
-            if (Test-Path "C:\pinggy.txt") {
-                $content = Get-Content "C:\pinggy.txt" -ErrorAction SilentlyContinue
-                if ($content) {
+            if (Test-Path "C:\pinggy.log") {
+                $content = Get-Content "C:\pinggy.log" -Raw -ErrorAction SilentlyContinue
+                if ($content -match "tcp://") {
+                    Write-Host "--- LINK ENCONTRADO ---"
                     Write-Host $content
+                    exit 0
                 }
             }
         }
+        # Se passar o tempo, imprime o que tiver lá
+        Get-Content "C:\pinggy.log" -ErrorAction SilentlyContinue
