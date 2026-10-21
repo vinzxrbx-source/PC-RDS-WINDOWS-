@@ -15,7 +15,6 @@ jobs:
         Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 1
         Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
         net user runneradmin SenhaForte123!
-        net localgroup administrators runneradmin /add
 
     - name: Baixar e Executar Pinggy em Background Sem Travamento
       run: |
