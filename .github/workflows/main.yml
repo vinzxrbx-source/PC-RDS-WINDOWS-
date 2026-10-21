@@ -19,20 +19,20 @@ jobs:
     steps:
     - name: Instalar e Configurar Chrome Remote Desktop
       run: |
-        Write-Host "A instalar o gestor Chocolatey e o Google Chrome..."
-        Set-ExecutionPolicy Bypass -Scope Process -Force
-        [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
-        iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
-        $env:Path += ";$env:ALLUSERSPROFILE\chocolatey\bin"
+        Write-Host "1. A instalar o Google Chrome via Chocolatey..."
         choco install googlechrome -y
 
-        Write-Host "A instalar o Chrome Remote Desktop via Winget..."
-        winget install --id Google.ChromeRemoteDesktop -e --accept-source-agreements --accept-package-agreements --silent
+        Write-Host "2. A descarregar o Chrome Remote Desktop diretamente do servidor da Google..."
+        $crdMsi = "$env:TEMP\chromeremotedesktophost.msi"
+        Invoke-WebRequest -Uri "https://dl.google.com/edgedl/chrome-remote-desktop/chromeremotedesktophost.msi" -OutFile $crdMsi
 
-        Write-Host "A procurar o executável de registo..."
+        Write-Host "3. A instalar o Chrome Remote Desktop silenciosamente..."
+        Start-Process msiexec.exe -ArgumentList "/i `"$crdMsi`" /quiet /norestart" -Wait
+
+        Write-Host "4. A aguardar que os ficheiros fiquem prontos..."
         Start-Sleep -Seconds 10
-        
-        # Procura automática do executável por todo o diretório do Google
+
+        # Procura automática pelo executável
         $crdExe = Get-ChildItem -Path "C:\Program Files (x86)\Google\Chrome Remote Desktop", "C:\Program Files\Google\Chrome Remote Desktop" -Filter "remoting_start_host.exe" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
 
         if (-not $crdExe) {
@@ -40,8 +40,8 @@ jobs:
             exit 1
         }
 
-        Write-Host "Encontrado em: $crdExe"
-        Write-Host "A registar o host com a tua conta Google..."
+        Write-Host "5. Encontrado em: $crdExe"
+        Write-Host "6. A registar o host com a tua conta Google..."
         
         & $crdExe --code="${{ github.event.inputs.auth_code }}" --redirect-url="https://remotedesktop.google.com/_/oauthredirect" --name="$Env:COMPUTERNAME" --pin="${{ github.event.inputs.pin }}"
 
