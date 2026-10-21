@@ -9,12 +9,24 @@ jobs:
     timeout-minutes: 360
 
     steps:
-    - name: Activar RDP
+    - name: Configurar RDP e Iniciar Cloudflare Tunnel
       run: |
         Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
         Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 1
         Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
         net user runneradmin SenhaForte123!
 
-    - name: Iniciar Tunel RDP
-      uses: alx-s/rdp-action@v1
+        # Transferir o Cloudflared oficial
+        Invoke-WebRequest -Uri "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe" -OutFile "cloudflared.exe"
+
+        # Iniciar o túnel TCP na porta RDP (3389)
+        Start-Process .\cloudflared.exe -ArgumentList "tunnel --url tcp://localhost:3389" -RedirectStandardOutput "C:\cloudflared.log" -RedirectStandardError "C:\cloudflared.err" -NoNewWindow
+
+        Write-Host "A aguardar inicializacao do tunel..."
+        Start-Sleep -Seconds 15
+
+        Write-Host "=== ENDERECO DO TUNEL CLOUDFLARE ==="
+        if (Test-Path "C:\cloudflared.err") { Get-Content "C:\cloudflared.err" }
+        if (Test-Path "C:\cloudflared.log") { Get-Content "C:\cloudflared.log" }
+
+        while ($true) { Start-Sleep -Seconds 30 }
