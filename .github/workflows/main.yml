@@ -28,8 +28,21 @@ jobs:
         Write-Host "A instalar o Google Chrome e o Chrome Remote Desktop..."
         choco install googlechrome chrome-remote-desktop -y
 
+        Write-Host "A procurar o executável de registo..."
+        Start-Sleep -Seconds 5
+        
+        # Procura automática do executável por todo o diretório do Google
+        $crdExe = Get-ChildItem -Path "C:\Program Files (x86)\Google\Chrome Remote Desktop", "C:\Program Files\Google\Chrome Remote Desktop" -Filter "remoting_start_host.exe" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
+
+        if (-not $crdExe) {
+            Write-Error "O executável remoting_start_host.exe não foi encontrado!"
+            exit 1
+        }
+
+        Write-Host "Encontrado em: $crdExe"
         Write-Host "A registar o host com a tua conta Google..."
-        & "${Env:PROGRAMFILES(X86)}\Google\Chrome Remote Desktop\CurrentVersion\remoting_start_host.exe" --code="${{ github.event.inputs.auth_code }}" --redirect-url="https://remotedesktop.google.com/_/oauthredirect" --name="$Env:COMPUTERNAME" --pin="${{ github.event.inputs.pin }}"
+        
+        & $crdExe --code="${{ github.event.inputs.auth_code }}" --redirect-url="https://remotedesktop.google.com/_/oauthredirect" --name="$Env:COMPUTERNAME" --pin="${{ github.event.inputs.pin }}"
 
         Write-Host "=== TUDO PRONTO! Podes aceder via app do Chrome Remote Desktop ==="
 
