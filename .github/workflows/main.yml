@@ -9,15 +9,6 @@ jobs:
     timeout-minutes: 360
 
     steps:
-    - name: Baixar e Configurar o Ngrok
-      run: |
-        Invoke-WebRequest -Uri "https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-windows-amd64.zip" -OutFile "ngrok.zip"
-        Expand-Archive -Path "ngrok.zip" -DestinationPath "."
-
-    - name: Conectar a Conta do Ngrok
-      run: |
-        .\ngrok.exe config add-authtoken ${{ secrets.NGROK_AUTH_TOKEN }}
-
     - name: Habilitar a Area de Trabalho Remota (RDP)
       run: |
         Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
@@ -25,6 +16,6 @@ jobs:
         Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
         net user runneradmin SenhaForte123!
 
-    - name: Iniciar o Tunel IP do Ngrok
+    - name: Iniciar o Tunel Gratuito (Serveo)
       run: |
-        .\ngrok.exe tcp 3389
+        ssh -o StrictHostKeyChecking=no -R 0:localhost:3389 serveo.net
