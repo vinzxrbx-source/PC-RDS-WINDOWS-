@@ -1,7 +1,15 @@
-name: Windows RustDesk Cloud
+name: Chrome Remote Desktop
 
 on:
   workflow_dispatch:
+    inputs:
+      pin:
+        description: 'PIN de 6 dígitos para o acesso (ex: 123456)'
+        required: true
+        default: '123456'
+      auth_code:
+        description: 'Cole apenas o código do --code (ex: 4/0AX...)'
+        required: true
 
 jobs:
   build:
@@ -9,32 +17,20 @@ jobs:
     timeout-minutes: 360
 
     steps:
-    - name: Configurar e Iniciar RustDesk
+    - name: Instalar e Configurar Chrome Remote Desktop
       run: |
-        # Criar diretório para o RustDesk
-        New-Item -ItemType Directory -Force -Path "C:\rustdesk"
-        Set-Location "C:\rustdesk"
+        Write-Host "A instalar o Google Chrome..."
+        winget install --id Google.Chrome -e --accept-source-agreements --accept-package-agreements
 
-        # Descarregar o RustDesk oficial para Windows
-        Invoke-WebRequest -Uri "https://github.com/rustdesk/rustdesk/releases/download/1.2.3/rustdesk-1.2.3-windows_x64.exe" -OutFile "rustdesk.exe"
-
-        # Configurar pasta e palavra-passe fixa para acesso direto
-        $configDir = "$env:APPDATA\RustDesk\config"
-        if (!(Test-Path $configDir)) { New-Item -ItemType Directory -Force -Path $configDir }
+        Write-Host "A descarregar o Chrome Remote Desktop..."
+        Invoke-WebRequest -Uri "https://dl.google.com/dl/edgedl/chrome-remote-desktop/chromeremotedesktop.msi" -OutFile "crd.msi"
         
-        @"
-        [options]
-        password = "SenhaForte123!"
-        "@ | Out-File -FilePath "$configDir\rustdesk.toml" -Encoding utf8
+        Write-Host "A instalar o CRD..."
+        Start-Process msiexec.exe -ArgumentList "/i crd.msi /quiet /norestart" -Wait
 
-        # Iniciar o RustDesk em segundo plano
-        Start-Process .\rustdesk.exe -ArgumentList "--tray" -NoNewWindow
-        Start-Sleep -Seconds 5
+        Write-Host "A registar o host com a tua conta Google..."
+        & "${Env:PROGRAMFILES(X86)}\Google\Chrome Remote Desktop\CurrentVersion\remoting_start_host.exe" --code="${{ github.event.inputs.auth_code }}" --redirect-url="https://remotedesktop.google.com/_/oauthredirect" --name="$Env:COMPUTERNAME" --pin="${{ github.event.inputs.pin }}"
 
-        # Obter o ID gerado para a conexão
-        Write-Host "=== ID DO RUSTDESK ==="
-        $rustdeskId = & .\rustdesk.exe --get-id
-        Write-Host "O teu ID de acesso é: $rustdeskId"
-        Write-Host "A palavra-passe é: SenhaForte123!"
+        Write-Host "=== TUDO PRONTO! Podes aceder via app do Chrome Remote Desktop ==="
 
         while ($true) { Start-Sleep -Seconds 30 }
