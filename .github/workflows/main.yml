@@ -19,8 +19,12 @@ jobs:
     steps:
     - name: Instalar e Configurar Chrome Remote Desktop
       run: |
-        Write-Host "A instalar o Google Chrome..."
-        winget install --id Google.Chrome -e --accept-source-agreements --accept-package-agreements
+        Write-Host "A descarregar o Google Chrome diretamente..."
+        $chromeInstaller = "$env:TEMP\chrome_installer.exe"
+        Invoke-WebRequest -Uri "https://dl.google.com/chrome/install/latest/chrome_installer.exe" -OutFile $chromeInstaller
+        
+        Write-Host "A instalar o Google Chrome silenciosamente..."
+        Start-Process -FilePath $chromeInstaller -ArgumentList "/silent /install" -Wait
 
         Write-Host "A descarregar o Chrome Remote Desktop..."
         Invoke-WebRequest -Uri "https://dl.google.com/dl/edgedl/chrome-remote-desktop/chromeremotedesktop.msi" -OutFile "crd.msi"
