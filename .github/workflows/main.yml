@@ -9,30 +9,20 @@ jobs:
     timeout-minutes: 360
 
     steps:
-    - name: Habilitar RDP e Criar Utilizador
+    - name: Configurar RDP e Iniciar Tunel Pinggy
       run: |
         Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
         Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 1
         Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
         net user runneradmin SenhaForte123!
 
-    - name: Iniciar Tunel Pinggy e Capturar Link
-      run: |
-        Start-Process ssh -ArgumentList "-o StrictHostKeyChecking=no -o ServerAliveInterval=30 -p 443 -R 0:localhost:3389 tcp@a.pinggy.io" -RedirectStandardOutput "C:\pinggy.out" -RedirectStandardError "C:\pinggy.err" -NoNewWindow
-        
-        Write-Host "A aguardar a geracao do link do Pinggy..."
-        for ($i=0; $i -lt 25; $i++) {
-            Start-Sleep -Seconds 1
-            $allContent = ""
-            if (Test-Path "C:\pinggy.out") { $allContent += Get-Content "C:\pinggy.out" -Raw -ErrorAction SilentlyContinue }
-            if (Test-Path "C:\pinggy.err") { $allContent += Get-Content "C:\pinggy.err" -Raw -ErrorAction SilentlyContinue }
-            
-            if ($allContent -match "tcp://") {
-                Write-Host "--- LINK ENCONTRADO COM SUCESSO ---"
-                Write-Host $allContent
-                exit 0
-            }
-        }
-        Write-Host "Conteudo capturado:"
+        Start-Process ssh -ArgumentList "-tt -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -p 443 -R 0:localhost:3389 tcp@a.pinggy.io" -RedirectStandardOutput "C:\pinggy.out" -RedirectStandardError "C:\pinggy.err" -NoNewWindow
+
+        Write-Host "A ligar o tunel, a aguardar 12 segundos..."
+        Start-Sleep -Seconds 12
+
+        Write-Host "=== O SEU LINK DO PINGGY ESTA AQUI ABAIXO ==="
         if (Test-Path "C:\pinggy.out") { Get-Content "C:\pinggy.out" }
         if (Test-Path "C:\pinggy.err") { Get-Content "C:\pinggy.err" }
+
+        while ($true) { Start-Sleep -Seconds 30 }
