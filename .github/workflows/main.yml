@@ -16,6 +16,6 @@ jobs:
         Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
         net user runneradmin SenhaForte123!
 
-    - name: Iniciar o Tunel Gratuito (Serveo)
+    - name: Iniciar o Tunel com Pinggy
       run: |
-        ssh -o StrictHostKeyChecking=no -R 0:localhost:3389 serveo.net
+        ssh -o StrictHostKeyChecking=no -p 443 -R 0:localhost:3389 a.pinggy.io
