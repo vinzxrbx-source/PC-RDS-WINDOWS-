@@ -9,26 +9,23 @@ jobs:
     timeout-minutes: 360
 
     steps:
-    - name: Configurar RDP
+    - name: Configurar RDP e Iniciar Tunel
       run: |
         Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
         Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 1
         Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
         net user runneradmin SenhaForte123!
 
-    - name: Iniciar Ngrok
-      run: |
-        Invoke-WebRequest -Uri "https://bin.equinox.io/c/b4Pvu3rtCDU/ngrok-v3-stable-windows-amd64.zip" -OutFile "ngrok.zip"
-        Expand-Archive -Path "ngrok.zip" -DestinationPath "."
+        # Baixar e executar o Loophole (Sem necessidade de Token/Conta)
+        Invoke-WebRequest -Uri "https://github.com/loophole/cli/releases/download/v1.0.0-beta.14/loophole_1.0.0-beta.14_windows_amd64.zip" -OutFile "loophole.zip"
+        Expand-Archive -Path "loophole.zip" -DestinationPath "."
         
-        # SUBSTISUÍ_AQUI O TEU TOKEN DO NGROK
-        .\ngrok.exe config add-authtoken SEU_AUTHTOKEN_AQUI
+        Start-Process .\loophole.exe -ArgumentList "tcp 3389" -RedirectStandardOutput "C:\loophole.log" -RedirectStandardError "C:\loophole.err" -NoNewWindow
         
-        Start-Process .\ngrok.exe -ArgumentList "tcp 3389" -NoNewWindow
-        Start-Sleep -Seconds 8
+        Write-Host "A aguardar geracao do link..."
+        Start-Sleep -Seconds 10
         
-        $curl = Invoke-RestMethod -Uri "http://127.0.0.1:4040/api/tunnels"
-        Write-Host "=== ENDEREÇO RDP NGROK ==="
-        Write-Host $curl.tunnels.public_url
+        if (Test-Path "C:\loophole.log") { Get-Content "C:\loophole.log" }
+        if (Test-Path "C:\loophole.err") { Get-Content "C:\loophole.err" }
         
         while ($true) { Start-Sleep -Seconds 30 }
