@@ -9,18 +9,19 @@ jobs:
     timeout-minutes: 360
 
     steps:
-    - name: Configurar RDP e Iniciar Bore
+    - name: Configurar RDP e Utilizador
       run: |
+        # Activa o RDP e desactiva a exigência de NLA
         Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
         Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 0
         Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
-        
-        # Cria um novo utilizador administrador dedicado sem falhas
-        net user admin123 SenhaForte123! /add
-        net localgroup Administrators admin123 /add
-        net localgroup "Remote Desktop Users" admin123 /add
 
-        # Transfere e executa o Bore
+        # Força a definição da palavra-passe do runneradmin via PowerShell nativo
+        $Password = ConvertTo-SecureString "SenhaForte123!" -AsPlainText -Force
+        Set-LocalUser -Name "runneradmin" -Password $Password
+        Set-LocalUser -Name "runneradmin" -PasswordNeverExpires $true
+
+        # Baixa e executa o Bore
         Invoke-WebRequest -Uri "https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-pc-windows-msvc.zip" -OutFile "bore.zip"
         Expand-Archive -Path "bore.zip" -DestinationPath "."
 
@@ -29,7 +30,7 @@ jobs:
         Write-Host "A aguardar o link TCP do Bore..."
         Start-Sleep -Seconds 10
 
-        Write-Host "=== O TEU ENDEREÇO RDP DIRETO ESTÁ AQUI ==="
+        Write-Host "=== ENDEREÇO RDP DIRETO ==="
         if (Test-Path "C:\bore.log") { Get-Content "C:\bore.log" }
         if (Test-Path "C:\bore.err") { Get-Content "C:\bore.err" }
 
