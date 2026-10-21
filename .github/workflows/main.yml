@@ -9,18 +9,16 @@ jobs:
     timeout-minutes: 360
 
     steps:
-    - name: Habilitar a Area de Trabalho Remota (RDP)
+    - name: Habilitar RDP e Criar Utilizador
       run: |
         Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
         Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 1
         Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
         net user runneradmin SenhaForte123!
+        net localgroup administrators runneradmin /add
 
-    - name: Iniciar o Tunel com Pinggy
+    - name: Baixar e Executar Pinggy em Background Sem Travamento
       run: |
-        $job = Start-Job -ScriptBlock {
-          ssh -o StrictHostKeyChecking=no -p 443 -R 0:localhost:3389 tcp@a.pinggy.io > C:\pinggy.log 2>&1
-        }
-        Start-Sleep -Seconds 10
-        Get-Content C:\pinggy.log
-        Receive-Job -Job $job -Wait
+        ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -p 443 -R 0:localhost:3389 tcp@a.pinggy.io > C:\pinggy.txt 2>&1 &
+        Start-Sleep -Seconds 8
+        Get-Content C:\pinggy.txt
