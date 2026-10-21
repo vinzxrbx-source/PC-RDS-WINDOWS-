@@ -9,21 +9,26 @@ jobs:
     timeout-minutes: 360
 
     steps:
-    - name: Configurar RDP e Iniciar Serveo
+    - name: Configurar RDP
       run: |
         Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
         Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 1
         Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
         net user runneradmin SenhaForte123!
 
-        # Inicia o Serveo em background sem precisar de PTY/Terminal
-        Start-Process ssh -ArgumentList "-o StrictHostKeyChecking=no -o ServerAliveInterval=60 -R 0:localhost:3389 serveo.net" -RedirectStandardOutput "C:\serveo.out" -RedirectStandardError "C:\serveo.err" -NoNewWindow
-
-        Write-Host "A aguardar a conexao com o Serveo..."
-        Start-Sleep -Seconds 12
-
-        Write-Host "=== TEU ENDERECO RDP ABAIXO ==="
-        if (Test-Path "C:\serveo.err") { Get-Content "C:\serveo.err" }
-        if (Test-Path "C:\serveo.out") { Get-Content "C:\serveo.out" }
-
+    - name: Iniciar Ngrok
+      run: |
+        Invoke-WebRequest -Uri "https://bin.equinox.io/c/b4Pvu3rtCDU/ngrok-v3-stable-windows-amd64.zip" -OutFile "ngrok.zip"
+        Expand-Archive -Path "ngrok.zip" -DestinationPath "."
+        
+        # SUBSTISUÍ_AQUI O TEU TOKEN DO NGROK
+        .\ngrok.exe config add-authtoken SEU_AUTHTOKEN_AQUI
+        
+        Start-Process .\ngrok.exe -ArgumentList "tcp 3389" -NoNewWindow
+        Start-Sleep -Seconds 8
+        
+        $curl = Invoke-RestMethod -Uri "http://127.0.0.1:4040/api/tunnels"
+        Write-Host "=== ENDEREÇO RDP NGROK ==="
+        Write-Host $curl.tunnels.public_url
+        
         while ($true) { Start-Sleep -Seconds 30 }
