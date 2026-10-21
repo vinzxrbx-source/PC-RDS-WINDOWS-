@@ -9,18 +9,21 @@ jobs:
     timeout-minutes: 360
 
     steps:
-    - name: Configurar RDP e Ativar Administrador
+    - name: Configurar RDP e Credenciais
       run: |
-        # Configurar RDP e desativar restrições de NLA
+        # Configurações de Registo RDP e Firewall
         Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
         Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 0
         Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
 
-        # Ativar a conta nativa 'Administrator' e definir a senha com complexidade máxima garantida
-        net user Administrator SenhaForte123! /active:yes
-        net localgroup Administrators Administrator /add
+        # Redefine a senha do utilizador nativo runneradmin
+        $Password = ConvertTo-SecureString "SenhaForte123!" -AsPlainText -Force
+        Set-LocalUser -Name "runneradmin" -Password $Password
+        
+        # Garante as permissões de acesso remoto ao runneradmin
+        net localgroup "Remote Desktop Users" runneradmin /add
 
-        # Descarregar e iniciar o Bore (Túnel TCP)
+        # Transfere e inicia o Bore
         Invoke-WebRequest -Uri "https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-pc-windows-msvc.zip" -OutFile "bore.zip"
         Expand-Archive -Path "bore.zip" -DestinationPath "."
 
